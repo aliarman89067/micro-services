@@ -69,11 +69,9 @@ class CustomerRepository {
 
   async FindCustomerById({ id }) {
     try {
-      const existingCustomer = await CustomerModel.findById(id)
-        .populate("address")
-        .populate("wishlist")
-        .populate("orders")
-        .populate("cart.product");
+      const existingCustomer = await CustomerModel.findById(id).populate(
+        "address"
+      );
       return existingCustomer;
     } catch (err) {
       throw new APIError(
@@ -100,8 +98,13 @@ class CustomerRepository {
     }
   }
 
-  async AddWishlistItem(customerId, product) {
+  async AddWishlistItem(
+    customerId,
+    { _id, name, desc, price, available, banner }
+  ) {
     try {
+      const product = { _id, name, desc, price, available, banner };
+
       const profile = await CustomerModel.findById(customerId).populate(
         "wishlist"
       );
@@ -141,15 +144,18 @@ class CustomerRepository {
     }
   }
 
-  async AddCartItem(customerId, product, qty, isRemove) {
+  async AddCartItem(
+    customerId,
+    { _id, name, desc, price, available, banner },
+    qty,
+    isRemove
+  ) {
     try {
-      const profile = await CustomerModel.findById(customerId).populate(
-        "cart.product"
-      );
+      const profile = await CustomerModel.findById(customerId).populate("cart");
 
       if (profile) {
         const cartItem = {
-          product,
+          product: { _id, name, desc, price, available, banner },
           unit: qty,
         };
 
@@ -179,7 +185,7 @@ class CustomerRepository {
 
         const cartSaveResult = await profile.save();
 
-        return cartSaveResult.cart;
+        return cartSaveResult;
       }
 
       throw new Error("Unable to add to cart!");
@@ -192,10 +198,10 @@ class CustomerRepository {
     }
   }
 
-  async AddOrderToProfile(customerId, order) {
+  async AddOrderToProfile(customerId, { _id, amount, date }) {
     try {
       const profile = await CustomerModel.findById(customerId);
-
+      const order = { _id, amount, date };
       if (profile) {
         if (profile.orders == undefined) {
           profile.orders = [];
